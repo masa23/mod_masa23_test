@@ -47,6 +47,7 @@ module AP_MODULE_DECLARE_DATA masa23_test_module;
 
 typedef struct {
     int Enabled;
+    char* String;
 } Masa23TestConfig;
 
 /* The sample content handler */
@@ -59,13 +60,15 @@ static int masa23_test_handler(request_rec *r)
     if (strcmp(r->handler, "masa23_test")) {
         return DECLINED;
     }
-    r->content_type = "text/html";      
+    r->content_type = "text/plain";      
 
     if (!r->header_only){
     if(conf->Enabled){
             ap_rputs("mod_masa23_test enabled\n", r);
+            ap_rputs(conf->String, r);
     }else{
             ap_rputs("mod_masa23_test disalbed\n", r);
+            ap_rputs(conf->String, r);
         }
     }
     return OK;
@@ -80,6 +83,7 @@ static void *create_masa23_test_server_config(apr_pool_t *p, server_rec *s)
 {
     Masa23TestConfig *conf = apr_pcalloc(p, sizeof *conf);
     conf->Enabled = 0;
+    conf->String = "masa23";
 
     return conf;
 }
@@ -87,8 +91,18 @@ static void *create_masa23_test_server_config(apr_pool_t *p, server_rec *s)
 static const char *masa23_test_on(cmd_parms *cmd, void *dummy, int arg)
 {
     Masa23TestConfig *conf = ap_get_module_config(cmd->server->module_config,
-                                               &masa23_test_module);
+                                                  &masa23_test_module);
     conf->Enabled = arg;
+
+    return NULL;
+}
+
+static const char *add_masa23_string(cmd_parms *cmd, void *dummy,
+                                     char *arg)
+{
+    Masa23TestConfig *conf = ap_get_module_config(cmd->server->module_config,
+                                                  &masa23_test_module);
+    conf->String = arg;
 
     return NULL;
 }
@@ -97,6 +111,8 @@ static const command_rec masa23_test_cmds[] =
 {
     AP_INIT_FLAG("Masa23Test", masa23_test_on, NULL, RSRC_CONF,
                  "mod_masa23_test enabled on/off"),
+    AP_INIT_ITERATE("Masa23String", add_masa23_string, NULL, RSRC_CONF,
+                    "mod_masa23_test string config"),
     { NULL }
 };
 
